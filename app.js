@@ -10,7 +10,6 @@ const server = http
     const createPath = (page) =>
       path.resolve(__dirname, 'views', `${page}.html`);
     let basePath = '';
-    console.log(__dirname);
 
     switch (req.url) {
       case '/':
@@ -22,7 +21,7 @@ const server = http
         break;
       case '/about-us':
         res.statusCode = 301;
-        res.setHeader('Location', '/contacts');
+        res.setHeader('Location', '/contacts'); // redirect to contacts
         res.end();
       case '/contacts':
         basePath = createPath('contacts');
@@ -39,8 +38,7 @@ const server = http
         res.statusCode = 500;
         console.error(err);
         res.end();
-      }
-      if (data) {
+      } else {
         res.write(data);
         res.end();
       }

@@ -1,51 +1,29 @@
-const http = require('http');
+const express = require('express');
+const app = express();
+// eslint-disable-next-line no-undef
 const PORT = process.env.PORT || 3000;
-const fs = require('fs');
 const path = require('path');
 
-const server = http
-  .createServer((req, res) => {
-    res.setHeader('Content-Type', 'text/html');
+// eslint-disable-next-line no-undef
+const createPath = (page) => path.resolve(__dirname, 'views', `${page}.html`);
 
-    const createPath = (page) =>
-      path.resolve(__dirname, 'views', `${page}.html`);
-    let basePath = '';
+app.listen(PORT, (error) => {
+  error
+    ? console.error('Error: ' + error)
+    : console.log(`Connecting to ${PORT}`);
+});
 
-    switch (req.url) {
-      case '/':
-      case '/index.html':
-      case '/home':
-      case '/home.html':
-        basePath = createPath('index');
-        res.statusCode = 200;
-        break;
-      case '/about-us':
-        res.statusCode = 301;
-        res.setHeader('Location', '/contacts'); // redirect to contacts
-        res.end();
-      case '/contacts':
-        basePath = createPath('contacts');
-        res.statusCode = 200;
-        break;
-      default:
-        basePath = createPath('error');
-        res.statusCode = 404;
-        break;
-    }
+app.get('/', (req, res) => {
+  res.sendFile(createPath('index'));
+});
+app.get('/contacts', (req, res) => {
+  res.sendFile(createPath('contacts'));
+});
+app.get('/about-us', (req, res) => {
+  res.redirect('/contacts');
+});
 
-    fs.readFile(basePath, (err, data) => {
-      if (err) {
-        res.statusCode = 500;
-        console.error(err);
-        res.end();
-      } else {
-        res.write(data);
-        res.end();
-      }
-    });
-  })
-  .listen('3000', 'localhost', (error) => {
-    error
-      ? console.log('something bad happened', error)
-      : console.log(`server is listening on port ${PORT}`);
-  });
+// Middleware
+app.use((req, res) => {
+  res.status(404).sendFile(createPath('error'));
+});

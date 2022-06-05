@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+  <%- include('./partials/head.ejs') %>
+  <body>
+    <%- include('./partials/nav.ejs') %>
+    <h1>Posts:</h1>
+    <ul>
+      <% if (posts.length > 0) { %> <% posts.forEach(post => { %>
+      <li>
+        <article>
+          <h2>
+            <a href="/posts/<%= post.id %>">Post title</a>
+          </h2>
+          <p><%= post.text %></p>
+          <div class="info">
+            <span><%= post.date %></span>
+            <span><%= post.author %></span>
+          </div>
+        </article>
+      </li>
+      <% }) %> <% } %>
+    </ul>
+  </body>
+</html>

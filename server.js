@@ -17,13 +17,8 @@ const successMsg = chalk.bgKeyword('green').white;
 const app = express();
 const PORT = process.env.PORT;
 
-// DB Config (MongoDB)
-const PASSWORD = process.env.PASSWORD;
-const DB_NAME = process.env.DB_NAME;
-const db = `mongodb+srv://artemchernii:${PASSWORD}@cluster-node-js-course.qlm9zua.mongodb.net/${DB_NAME}?retryWrites=true&w=majority`;
-
 // Listen for connections
-app.listen(PORT, (error) => {
+app.listen(process.env.PORT, (error) => {
   error
     ? console.error(errorMsg('Error: ' + error))
     : console.log(successMsg(`Connecting to ${PORT}`));
@@ -31,7 +26,7 @@ app.listen(PORT, (error) => {
 
 // Connect to MongoDB
 mongoose
-  .connect(db, { useNewUrlParser: true, useUnifiedTopology: true })
+  .connect(process.env.DB, { useNewUrlParser: true, useUnifiedTopology: true })
   .then((res) => {
     console.log(successMsg('Connected to MongoDB'), res.Collection.dbName);
   })

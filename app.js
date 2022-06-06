@@ -1,12 +1,33 @@
 /* eslint-disable no-undef */
 const express = require('express');
+const mongoose = require('mongoose');
+const morgan = require('morgan');
+const methodOverride = require('method-override');
+
 const app = express();
 const PORT = 3000;
 const path = require('path');
-const morgan = require('morgan');
+// Models
+const Post = require('./models/post');
+const Contact = require('./models/contact');
+const Name = require('./models/name');
+// DB Config
+const PASSWORD = 'ronaldo7artem';
+const DB_NAME = 'node-blog';
+const db = `mongodb+srv://artemchernii:${PASSWORD}@cluster-node-js-course.qlm9zua.mongodb.net/${DB_NAME}?retryWrites=true&w=majority`;
 
+// Connect to MongoDB
+mongoose
+  .connect(db, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then((res) => {
+    console.log('Connected to MongoDB');
+  })
+  .catch((err) => {
+    console.log('Error: ', err);
+  });
+// Setup ejs engine
 app.set('view engine', 'ejs');
-
+// Create path to public folder (dynamic for all platforms)
 const createPath = (page) =>
   path.resolve(__dirname, 'ejs-views', `${page}.ejs`);
 app.listen(PORT, (error) => {
@@ -14,6 +35,7 @@ app.listen(PORT, (error) => {
     ? console.error('Error: ' + error)
     : console.log(`Connecting to ${PORT}`);
 });
+// Setup morgan logger
 app.use(
   morgan(':method :url :status :res[content-length] - :response-time ms')
 );
@@ -26,6 +48,7 @@ app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
 });
+app.use(methodOverride('_method'));
 // Routes
 app.get('/', (req, res) => {
   const title = 'Home';
@@ -33,61 +56,100 @@ app.get('/', (req, res) => {
 });
 app.get('/contacts', (req, res) => {
   const title = 'Contacts';
-  const contacts = [
-    { name: 'youtube', link: 'https://www.youtube.com/' },
-    { name: 'twitter', link: 'https://www.twitter.com/' },
-    { name: 'github', link: 'https://www.github.com/' },
-  ];
-  res.render(createPath('contacts'), { contacts, title });
+  Contact.find()
+    .then((contacts) => {
+      console.log('Contacts: ', contacts);
+      res.render(createPath('contacts'), { title, contacts });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.render(createPath('error'), { title: 'Error' });
+    });
+});
+app.get('/names', (req, res) => {
+  Promise.all([Contact.find(), Name.find()])
+    .then(([contacts, names]) => {
+      console.log('Contacts: ', contacts);
+      console.log('Names: ', names);
+      res.render(createPath('names'), { title: 'Names', contacts, names });
+    })
+    .catch((err) => console.log(err));
 });
 app.get('/about-us', (req, res) => {
   res.redirect('/contacts');
 });
 app.post('/add-post', (req, res) => {
   const { title, author, text } = req.body;
-  const post = {
-    id: new Date(),
-    date: new Date().toLocaleDateString(),
-    title,
-    author,
-    text,
-  };
-  res.render(createPath('post'), { post, title });
+  const post = new Post({ title, author, text });
+  post
+    .save()
+    .then((result) => {
+      res.redirect('/posts');
+    })
+    .catch((err) => {
+      console.log('Error: ', err);
+      res.render(createPath('error'), { title: 'Error' });
+    });
 });
 app.get('/add-post', (req, res) => {
   const title = 'Add Post';
   res.render(createPath('add-post'), { title });
 });
+app.get('/edit/:id', (req, res) => {
+  const title = 'Edit Post';
+  Post.findById(req.params.id)
+    .then((post) => {
+      res.render(createPath('edit-post'), { title, post });
+    })
+    .catch((err) => {
+      console.log('Error: ', err);
+      res.render(createPath('error'), { title: 'Error' });
+    });
+});
+app.put('/edit/:id', (req, res) => {
+  const { title, author, text } = req.body;
+  const { id } = req.params;
+  Post.findByIdAndUpdate(id, { title, author, text })
+    .then((post) => {
+      res.redirect(`/posts/${id}`);
+    })
+    .catch((err) => {
+      console.log('Error: ', err);
+      res.render(createPath('error'), { title: 'Error' });
+    });
+});
 app.get('/posts/:id', (req, res) => {
   const title = 'Post';
-  const post = {
-    id: '1',
-    title: 'Post 1',
-    text: 'This is the body of post 1',
-    date: '2020-01-01',
-    author: 'John Doe',
-  };
-  res.render(createPath('post'), { title, post });
+  Post.findById(req.params.id)
+    .then((post) => {
+      res.render(createPath('post'), { title, post });
+    })
+    .catch((error) => {
+      console.log('Error: ', error);
+      res.render(createPath('error'), { title: 'Error' });
+    });
+});
+app.delete('/posts/:id', (req, res) => {
+  Post.findByIdAndDelete(req.params.id)
+    .then((result) => {
+      res.sendStatus(200);
+    })
+    .catch((err) => {
+      console.log(err);
+      res.render(createPath('error'), { title: 'Error' });
+    });
 });
 app.get('/posts', (req, res) => {
   const title = 'Posts';
-  const posts = [
-    {
-      id: '1',
-      title: 'Post 1',
-      text: 'This is the body of post 1',
-      date: '2020-01-01',
-      author: 'John Doe',
-    },
-    {
-      id: '2',
-      title: 'Post 2',
-      text: 'This is the body of post 2',
-      date: '2020-01-02',
-      author: 'Bereza',
-    },
-  ];
-  res.render(createPath('posts'), { title, posts });
+  Post.find()
+    .sort({ createdAt: -1 })
+    .then((posts) => {
+      res.render(createPath('posts'), { title, posts });
+    })
+    .catch((error) => {
+      console.log('Error: ', error);
+      res.render(createPath('error'), { title: 'Error' });
+    });
 });
 // Middleware
 app.use((req, res) => {

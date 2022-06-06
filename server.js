@@ -15,20 +15,19 @@ const errorMsg = chalk.bgKeyword('white').redBright;
 const successMsg = chalk.bgKeyword('green').white;
 
 const app = express();
-const PORT = process.env.PORT;
 
 // Listen for connections
 app.listen(process.env.PORT, (error) => {
   error
     ? console.error(errorMsg('Error: ' + error))
-    : console.log(successMsg(`Connecting to ${PORT}`));
+    : console.log(successMsg(`Connecting to ${process.env.PORT}`));
 });
 
 // Connect to MongoDB
 mongoose
   .connect(process.env.DB, { useNewUrlParser: true, useUnifiedTopology: true })
   .then((res) => {
-    console.log(successMsg('Connected to MongoDB'), res.Collection.dbName);
+    console.log(successMsg('Connected to MongoDB'));
   })
   .catch((err) => {
     console.log(errorMsg('Error: ', err));

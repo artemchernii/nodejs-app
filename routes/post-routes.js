@@ -14,8 +14,8 @@ router.post('/add-post', postAddPost);
 router.get('/add-post', getAddPost);
 router.get('/edit/:id', getEditPost);
 router.put('/edit/:id', editPost);
-router.get('/posts/:id', getPost);
-router.delete('/posts/:id', deletePost);
+router.get('/post/:id', getPost);
+router.delete('/post/:id', deletePost);
 router.get('/posts', getPosts);
 
 module.exports = router;

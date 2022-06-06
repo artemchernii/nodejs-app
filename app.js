@@ -1,35 +1,42 @@
+/* eslint-disable no-undef */
 const express = require('express');
 const mongoose = require('mongoose');
 const morgan = require('morgan');
 const methodOverride = require('method-override');
+const chalk = require('chalk');
+require('dotenv').config();
 
 const postRoutes = require('./routes/post-routes');
 const contactRoutes = require('./routes/contact-routes');
+const postApiRoutes = require('./routes/api-post-routes');
 const createPath = require('./helpers/create-path');
 
-const app = express();
-const PORT = 3000;
+const errorMsg = chalk.bgKeyword('white').redBright;
+const successMsg = chalk.bgKeyword('green').white;
 
-// DB Config
-const PASSWORD = 'ronaldo7artem';
-const DB_NAME = 'node-blog';
+const app = express();
+const PORT = process.env.PORT;
+
+// DB Config (MongoDB)
+const PASSWORD = process.env.PASSWORD;
+const DB_NAME = process.env.DB_NAME;
 const db = `mongodb+srv://artemchernii:${PASSWORD}@cluster-node-js-course.qlm9zua.mongodb.net/${DB_NAME}?retryWrites=true&w=majority`;
 
 // Listen for connections
 app.listen(PORT, (error) => {
   error
-    ? console.error('Error: ' + error)
-    : console.log(`Connecting to ${PORT}`);
+    ? console.error(errorMsg('Error: ' + error))
+    : console.log(successMsg(`Connecting to ${PORT}`));
 });
 
 // Connect to MongoDB
 mongoose
   .connect(db, { useNewUrlParser: true, useUnifiedTopology: true })
   .then((res) => {
-    console.log('Connected to MongoDB', res.Collection.dbName);
+    console.log(successMsg('Connected to MongoDB'), res.Collection.dbName);
   })
   .catch((err) => {
-    console.log('Error: ', err);
+    console.log(errorMsg('Error: ', err));
   });
 
 // Setup ejs engine
@@ -56,8 +63,9 @@ app.get('/', (req, res) => {
 // Posts and contacts routes
 app.use(postRoutes);
 app.use(contactRoutes);
+app.use(postApiRoutes);
 // Handle wrong routes
 app.use((req, res) => {
-  const title = '404';
+  const title = 'Something went wrong';
   res.status(404).render(createPath('error'), { title });
 });

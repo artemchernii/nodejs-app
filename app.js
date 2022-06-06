@@ -1,95 +1,62 @@
-/* eslint-disable no-undef */
 const express = require('express');
+const mongoose = require('mongoose');
+const morgan = require('morgan');
+const methodOverride = require('method-override');
+
+const postRoutes = require('./routes/post-routes');
+const contactRoutes = require('./routes/contact-routes');
+const createPath = require('./helpers/create-path');
+
 const app = express();
 const PORT = 3000;
-const path = require('path');
-const morgan = require('morgan');
 
-app.set('view engine', 'ejs');
+// DB Config
+const PASSWORD = 'ronaldo7artem';
+const DB_NAME = 'node-blog';
+const db = `mongodb+srv://artemchernii:${PASSWORD}@cluster-node-js-course.qlm9zua.mongodb.net/${DB_NAME}?retryWrites=true&w=majority`;
 
-const createPath = (page) =>
-  path.resolve(__dirname, 'ejs-views', `${page}.ejs`);
+// Listen for connections
 app.listen(PORT, (error) => {
   error
     ? console.error('Error: ' + error)
     : console.log(`Connecting to ${PORT}`);
 });
+
+// Connect to MongoDB
+mongoose
+  .connect(db, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then((res) => {
+    console.log('Connected to MongoDB', res.Collection.dbName);
+  })
+  .catch((err) => {
+    console.log('Error: ', err);
+  });
+
+// Setup ejs engine
+app.set('view engine', 'ejs');
+// Setup morgan logger
 app.use(
   morgan(':method :url :status :res[content-length] - :response-time ms')
 );
 // Middleware
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static('styles'));
-app.use(express.static('images'));
-app.use(express.static('scripts'));
+// Try middleware
 app.use((req, res, next) => {
   console.log(`${req.method} ${req.url}`);
   next();
 });
-// Routes
+// Method override middleware
+app.use(methodOverride('_method'));
+// Index route
 app.get('/', (req, res) => {
   const title = 'Home';
   res.render(createPath('index'), { title });
 });
-app.get('/contacts', (req, res) => {
-  const title = 'Contacts';
-  const contacts = [
-    { name: 'youtube', link: 'https://www.youtube.com/' },
-    { name: 'twitter', link: 'https://www.twitter.com/' },
-    { name: 'github', link: 'https://www.github.com/' },
-  ];
-  res.render(createPath('contacts'), { contacts, title });
-});
-app.get('/about-us', (req, res) => {
-  res.redirect('/contacts');
-});
-app.post('/add-post', (req, res) => {
-  const { title, author, text } = req.body;
-  const post = {
-    id: new Date(),
-    date: new Date().toLocaleDateString(),
-    title,
-    author,
-    text,
-  };
-  res.render(createPath('post'), { post, title });
-});
-app.get('/add-post', (req, res) => {
-  const title = 'Add Post';
-  res.render(createPath('add-post'), { title });
-});
-app.get('/posts/:id', (req, res) => {
-  const title = 'Post';
-  const post = {
-    id: '1',
-    title: 'Post 1',
-    text: 'This is the body of post 1',
-    date: '2020-01-01',
-    author: 'John Doe',
-  };
-  res.render(createPath('post'), { title, post });
-});
-app.get('/posts', (req, res) => {
-  const title = 'Posts';
-  const posts = [
-    {
-      id: '1',
-      title: 'Post 1',
-      text: 'This is the body of post 1',
-      date: '2020-01-01',
-      author: 'John Doe',
-    },
-    {
-      id: '2',
-      title: 'Post 2',
-      text: 'This is the body of post 2',
-      date: '2020-01-02',
-      author: 'Bereza',
-    },
-  ];
-  res.render(createPath('posts'), { title, posts });
-});
-// Middleware
+// Posts and contacts routes
+app.use(postRoutes);
+app.use(contactRoutes);
+// Handle wrong routes
 app.use((req, res) => {
   const title = '404';
   res.status(404).render(createPath('error'), { title });

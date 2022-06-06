@@ -61,6 +61,6 @@ app.use(contactRoutes);
 app.use(postApiRoutes);
 // Handle wrong routes
 app.use((req, res) => {
-  const title = '404';
+  const title = 'Something went wrong';
   res.status(404).render(createPath('error'), { title });
 });
